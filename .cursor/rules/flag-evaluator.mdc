@@ -1,0 +1,32 @@
+---
+description: Evaluador de flags — función pura en @ff/domain, fail-safe y precedencia
+globs: packages/domain/**/*.ts
+alwaysApply: false
+---
+
+# Evaluador de flags (`packages/domain`)
+
+Única implementación: `evaluateFlag(flagSnapshot, input): EvaluateResult`. Pura: sin I/O, sin `Math.random`, sin imports de Hono, Drizzle ni React.
+
+`apps/api` solo carga el snapshot desde DB y llama a domain. `apps/web` no evalúa: muestra la respuesta de `POST /api/evaluate`.
+
+## Precedencia (RF-10)
+
+1. Flag missing o `status !== "active"` → `{ enabled: false, reason: "flag_inactive_or_missing" }`
+2. Override para `tenantId` → ese boolean; `reason: "tenant_override"`
+3. Rollout % activo (entero 0–100) → `hashToBucket(userId ?? sessionId)` en `0..99`; `enabled = bucket < percentage`. Si faltan ambos subjects → `false`, `reason: "missing_subject_for_rollout"`
+4. Default del `environment`; si no hay → `false`
+
+`percentage === 0` nadie; `100` todos (`bucket < 100`). Mismo input → mismo output (RF-11). Fail-safe siempre `false` (RNF-04).
+
+```ts
+// ❌ BAD — ramificar en la ruta o en un componente
+return { enabled: Math.random() * 100 < percentage };
+
+// ✅ GOOD
+export function evaluateFlag(snapshot: FlagSnapshot | null, input: EvaluateInput): EvaluateResult {
+  // ramas 1–4; reasons de union constante
+}
+```
+
+`reason` es union de strings estables, no mensajes libres. Tests de esta lógica viven en `packages/domain`.

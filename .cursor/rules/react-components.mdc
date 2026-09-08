@@ -1,0 +1,27 @@
+---
+description: Convenciones de React/Next.js en apps/web (App Router, Tailwind, estados de UI)
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Componentes React (`apps/web`)
+
+- Componentes funcionales. App Router. Estilos solo con Tailwind.
+- Rutas: `/login`; área autenticada `/`, `/flags/new`, `/flags/[id]`. Layout `(app)` con usuario demo + logout.
+- Cliente HTTP: helper `apiClient` a rutas same-origin `/api/*` con `credentials: "include"`. No llamar a `:3001` desde el browser si hay rewrite.
+
+Estados obligatorios en páginas que hacen fetch: **loading**, **vacío** (copy claro) y **error** (red/401 visible). Si la API falla, no inventar datos mock.
+
+No reimplementar `evaluateFlag` en el cliente. El simulador solo muestra `{ enabled, reason }` de `POST /api/evaluate`.
+
+```tsx
+// ❌ BAD
+const enabled = tenantId === "acme" ? true : envDefault;
+
+// ✅ GOOD
+const { data } = await apiClient("/api/evaluate", { method: "POST", body });
+```
+
+- `key` de flag solo lectura en edit. Cambio de status y targeting: `reason` no vacío antes de submit.
+- Accesibilidad mínima: `<table>` o headings, botones con texto, labels en inputs.
+- Un job por página (crear vs editar). Mapear `reason` de evaluación a labels humanos.

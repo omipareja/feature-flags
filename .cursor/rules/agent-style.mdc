@@ -1,0 +1,23 @@
+---
+description: Estilo de cambios de agentes — alcance de spec, commits pequeños, dependencias
+alwaysApply: true
+---
+
+# Estilo de cambios (agentes)
+
+Fuente de verdad: `docs/prds/feature-flags-mvp.md` y la spec activa en `docs/specs/`. Respetar In scope / Out of scope. No implementar OAuth, RBAC, variantes A/B, SDKs extra, HA ni features del PRD marcadas out of scope.
+
+## Alcance de archivos
+
+- Tocar solo archivos necesarios para la spec o el ticket actual.
+- No reformatear el monorepo, no “limpiar” paquetes vecinos, no reescribir README salvo que la spec lo pida.
+- Gestor: solo `pnpm`. No añadir dependencias sin justificarlas en el cambio (por qué, en qué package, alternativa rechazada). Si la spec no las nombra, no instalarlas.
+
+## Commits y diffs
+
+- Commits pequeños y atómicos (un concern: schema, ruta, UI o tests).
+- No mezclar refactor incidental con feature.
+- No commitear `.env`, secretos ni `*.sqlite` de datos locales.
+- No usar `--no-verify` ni force-push. Commits solo si el usuario lo pide.
+
+Al implementar: packages `@ff/*`, envelope `{ data }` / `{ error: { code, message } }`, tests Vitest en domain/db/api según spec 02.
