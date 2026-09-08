@@ -1,0 +1,26 @@
+---
+description: Criterios de testing con Vitest — ubicación, alcance y mínimos por package
+globs: "**/*.test.ts"
+alwaysApply: false
+---
+
+# Testing (Vitest)
+
+Runner único: Vitest (`environment: "node"`). Archivos `*.test.ts`. Comando raíz: `pnpm test` (turbo).
+
+## Dónde y qué testear
+
+| Package | Tipo | Mínimo |
+|---------|------|--------|
+| `packages/domain` | Unitario, sin I/O | `isValidFlagKey`; matriz de `evaluateFlag` (RF-10…15); `hashToBucket` estable; mismo input → mismo output |
+| `packages/db` | Integración con DB temp / `:memory:` | migrate + insert/leer flag; unique de `key`; seed mínimo |
+| `apps/api` | Integración con `app.request` (sin bind de puerto) | `/health`; CRUD flags; auth 401; targeting 400; evaluate público; audit |
+
+`apps/web`: tests no bloquean el MVP. Si existen, no fallar el pipeline; no exigir snapshots de UI ni E2E.
+
+## Criterios
+
+- Deterministas: nada de `Math.random`, red real ni timers flaky.
+- API: exportar `app` y usar `app.request(...)`; DB de test aislada, no el SQLite de desarrollo.
+- Evaluador: cubrir draft/archived/missing → `false`; override > % > default; % 0 y 100; subject faltante → fail-safe.
+- Un test smoke por workspace configurado no sustituye los casos de la spec activa.

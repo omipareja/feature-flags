@@ -1,0 +1,28 @@
+---
+description: TypeScript estricto — tipos compartidos en @ff/domain, prohibido any
+alwaysApply: true
+---
+
+# TypeScript
+
+- `strict: true` en todo el monorepo. Heredar `tsconfig.base.json`.
+- Prohibido `any` y `as any`. Usar `unknown` y narrowing. Evitar `as` salvo en límites de librerías.
+- Tipos de negocio viven en `@ff/domain` y se reutilizan. No duplicar uniones en web/api.
+
+```ts
+// ❌ BAD — copiar el contrato en cada app
+type EvaluateResult = { enabled: boolean; reason: string };
+
+// ✅ GOOD
+import type { EvaluateInput, EvaluateResult, FlagStatus } from "@ff/domain";
+```
+
+Uniones canónicas (no `enum` de TS):
+
+- `FlagStatus`: `"draft" | "active" | "archived"`
+- `Environment`: `"dev" | "staging" | "prod"`
+- `EvaluateResult.reason`: union de strings estables (`flag_inactive_or_missing`, `tenant_override`, `missing_subject_for_rollout`, …)
+
+JSON de API en **camelCase**. Columnas SQLite en **snake_case** vía Drizzle; mapear en `apps/api`, no filtrar snake_case a la UI.
+
+Tipos inferidos de Drizzle se quedan en `@ff/db`. El snapshot que recibe `evaluateFlag` es un tipo de dominio, no una fila cruda.

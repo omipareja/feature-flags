@@ -1,0 +1,33 @@
+---
+description: Arquitectura del monorepo Feature Flags — responsabilidades de web, api, db y domain
+alwaysApply: true
+---
+
+# Arquitectura del monorepo
+
+Workspaces (`pnpm` + Turborepo): `apps/web` (`@ff/web`), `apps/api` (`@ff/api`), `packages/db` (`@ff/db`), `packages/domain` (`@ff/domain`).
+
+## Dependencias permitidas
+
+- `domain`: cero I/O. No importa `db`, `api` ni `web`.
+- `db`: schema Drizzle, migraciones, cliente libSQL, seed. No HTTP ni evaluación.
+- `api`: Hono, auth, CORS, rutas. Importa `@ff/db` y `@ff/domain`.
+- `web`: Next.js App Router + Tailwind. Importa tipos de `@ff/domain`. No importa `@ff/db`. Llama a la API vía rewrite same-origin `/api/*` (puertos 3000 / 3001).
+
+```
+web  → domain (tipos)
+api  → domain + db
+db   → (nada de apps)
+domain → (nada de packages/apps)
+```
+
+## Dónde va cada cosa
+
+| Capacidad | Dónde |
+|-----------|--------|
+| Tipos de flag, `EvaluateInput` / `EvaluateResult`, `isValidFlagKey`, `evaluateFlag` | `packages/domain` |
+| Tablas `feature_flags`, `environment_defaults`, `tenant_overrides`, `rollouts`, `audit_log` | `packages/db` |
+| CRUD HTTP, auth, `POST /api/evaluate` (carga snapshot + llama domain) | `apps/api` |
+| UI, login, dashboard, formularios, simulador | `apps/web` |
+
+Exportar `app` Hono aparte de `listen` (`src/app.ts` vs `src/index.ts`). Una sola instancia escribe SQLite (`DATABASE_URL`). Respuestas JSON: `{ data }` o `{ error: { code, message } }`.
